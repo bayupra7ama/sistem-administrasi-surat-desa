@@ -89,10 +89,22 @@
                                                 </td>
                                             @else
                                                 <td>
+                                                    {{-- Tampilkan Pesan Admin --}}
                                                     @if ($item->pesan_admin)
-                                                        <span>{{ $item->pesan_admin }}</span>
+                                                        <span
+                                                            class="d-block mb-2 font-weight-bold {{ $item->status == 'Rejected' ? 'text-danger' : 'text-info' }}">
+                                                            Catatan: {{ $item->pesan_admin }}
+                                                        </span>
                                                     @else
-                                                        <span class="text-muted">-</span>
+                                                        <span class="text-muted d-block mb-2">-</span>
+                                                    @endif
+
+                                                    {{-- Tampilkan Tombol Edit JIKA status Rejected --}}
+                                                    @if ($item->status == 'Rejected')
+                                                        <a href="{{ route('penduduk.pengajuan.edit', $item->id) }}"
+                                                            class="btn btn-warning btn-sm">
+                                                            <i class="fas fa-edit"></i> Perbaiki Data
+                                                        </a>
                                                     @endif
                                                 </td>
                                             @endif

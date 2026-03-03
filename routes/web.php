@@ -59,6 +59,9 @@ Route::middleware(['auth', 'role:penduduk'])->prefix('penduduk')->group(function
     Route::post('/pengajuan/{kode}', [PengajuanController::class, 'submit'])->name('pengajuan.submit');
     Route::get('/riwayat-surat', [PengajuanController::class, 'riwayat'])->name('penduduk.riwayat.surat');
     Route::get('/pengajuan/{id}/download', [PengajuanController::class, 'download'])->name('penduduk.pengajuan.download');
+
+    Route::get('/pengajuan/edit/{id}', [PengajuanController::class, 'edit'])->name('penduduk.pengajuan.edit');
+    Route::put('/pengajuan/update/{id}', [PengajuanController::class, 'update'])->name('penduduk.pengajuan.update');
 });
 
 require __DIR__ . '/auth.php';

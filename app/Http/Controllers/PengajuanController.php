@@ -69,9 +69,9 @@ class PengajuanController extends Controller
                 $rules['file_buku_nikah'] = 'required|file|mimes:jpg,jpeg,png,pdf|max:2048';
                 break;
             case 'SKIA': // Surat Pengantar Pembuatan KIA
-                $rules['file_ktp_ortu'] = 'required|file|mimes:jpg,jpeg,png,pdf|max:2048';
                 $rules['file_akte'] = 'required|file|mimes:jpg,jpeg,png,pdf|max:2048';
                 $rules['file_kk'] = 'required|file|mimes:jpg,jpeg,png,pdf|max:2048';
+                $rules['file_ktp_ortu'] = 'required|file|mimes:jpg,jpeg,png,pdf|max:2048';
                 $rules['file_foto'] = 'required|file|mimes:jpg,jpeg,png|max:2048';
                 break;
             case 'SPEK': // Surat Pernyataan Perubahan Elemen Kependudukan
@@ -116,12 +116,11 @@ class PengajuanController extends Controller
                 $rules['ktp_saksi'] = 'required|file|mimes:jpg,jpeg,png,pdf|max:2048';
                 $rules['surat_nikah'] = 'required|file|mimes:jpg,jpeg,png,pdf|max:2048';
                 $rules['bukti_lahir'] = 'required|file|mimes:jpg,jpeg,png,pdf|max:2048';
-                $rules['materai'] = 'required|file|mimes:jpg,jpeg,png,pdf|max:2048';
                 break;
             case 'SPKM': // Surat Pengantar Pembuatan Akte Kematian
                 $rules['ktp_meninggal'] = 'required|file|mimes:jpg,jpeg,png,pdf|max:2048';
-                $rules['file_kk'] = 'required|file|mimes:jpg,jpeg,png,pdf|max:2048';
-                $rules['ktp_saksi'] = 'required|file|mimes:jpg,jpeg,png,pdf|max:2048';
+                $rules['ktp_saksi_1'] = 'required|file|mimes:jpg,jpeg,png,pdf|max:2048';
+                $rules['ktp_saksi_2'] = 'required|file|mimes:jpg,jpeg,png,pdf|max:2048';
                 break;
         }
 
@@ -337,5 +336,111 @@ class PengajuanController extends Controller
         $profilDesa = ProfilDesa::first();
 
         return view($viewName, compact('pengajuan', 'data', 'profilDesa'));
+    }
+
+    // Menampilkan halaman Edit khusus surat yang ditolak
+    public function edit($id)
+    {
+        $pengajuan = Pengajuan::where('id', $id)->where('penduduk_id', Auth::id())->firstOrFail();
+
+        if ($pengajuan->status !== 'Rejected') {
+            return redirect()->route('penduduk.riwayat.surat')->with('error', 'Hanya pengajuan yang ditolak yang bisa diperbaiki.');
+        }
+
+        $jenisSurat = $pengajuan->jenisSurat;
+        $penduduk = Auth::user();
+        $isian = is_string($pengajuan->data) ? json_decode($pengajuan->data, true) : $pengajuan->data;
+
+        return view('penduduk.pengajuan.edit', [
+            'title' => 'Perbaiki Formulir ' . $jenisSurat->nama_surat,
+            'jenisSurat' => $jenisSurat,
+            'penduduk' => $penduduk,
+            'pengajuan' => $pengajuan,
+            'isian' => $isian
+        ]);
+    }
+
+    // Memproses update data dari warga
+    public function update(Request $request, $id)
+    {
+        $pengajuan = Pengajuan::where('id', $id)->where('penduduk_id', Auth::id())->firstOrFail();
+
+        if ($pengajuan->status !== 'Rejected') {
+            return redirect()->route('penduduk.riwayat.surat')->with('error', 'Pengajuan tidak dapat diedit.');
+        }
+
+        $kode = $pengajuan->jenisSurat->kode;
+        $rules = [];
+
+        // Aturan file sama dengan fungsi submit(), TAPI kita buat 'nullable' (Boleh kosong)
+        // Karena warga mungkin hanya ingin mengubah teks, bukan filenya.
+        switch ($kode) {
+            case 'SD':
+                $rules['file_kk'] = 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048';
+                break;
+            case 'SPP':
+                $rules['file_kk'] = 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048';
+                $rules['file_ktp'] = 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048';
+                $rules['file_buku_nikah'] = 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048';
+                break;
+            case 'SKIA':
+                $rules['file_akte'] = 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048';
+                $rules['file_kk'] = 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048';
+                $rules['file_ktp_ortu'] = 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048';
+                $rules['file_foto'] = 'nullable|file|mimes:jpg,jpeg,png|max:2048';
+                break;
+            case 'SPEK':
+            case 'SKD':
+            case 'SPIK':
+                $rules['file_kk'] = 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048';
+                $rules['file_ktp'] = 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048';
+                break;
+            case 'SPN':
+            case 'SPAK':
+                $rules['file_kk'] = 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048';
+                $rules['ktp_ortu'] = 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048';
+                $rules['file_ktp_ortu'] = 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048';
+                break;
+            case 'SKU':
+            case 'SKTM':
+                $rules['file_ktp'] = 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048';
+                $rules['file_kk'] = 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048';
+                $rules['surat_pengantar_rt'] = 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048';
+                break;
+            case 'SPKM':
+                $rules['ktp_meninggal'] = 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048';
+                $rules['ktp_saksi_1'] = 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048';
+                $rules['ktp_saksi_2'] = 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048';
+                break;
+        }
+
+        $request->validate($rules);
+
+        $dataPengajuan = is_string($pengajuan->data) ? json_decode($pengajuan->data, true) : (array) $pengajuan->data;
+        $inputBaru = $request->except(['_token', '_method']);
+
+        // 1. Update data teks
+        foreach ($inputBaru as $key => $val) {
+            if (!$request->hasFile($key)) {
+                $dataPengajuan[$key] = $val;
+            }
+        }
+
+        // 2. Update file JIKA ADA file baru yang diunggah
+        foreach ($request->allFiles() as $key => $file) {
+            // Hapus file lama dari storage agar server tidak penuh
+            if (isset($dataPengajuan[$key]) && Storage::disk('public')->exists($dataPengajuan[$key])) {
+                Storage::disk('public')->delete($dataPengajuan[$key]);
+            }
+            $path = $file->store("syarat/$kode", 'public');
+            $dataPengajuan[$key] = $path; // Timpa dengan file baru
+        }
+
+        $pengajuan->data = json_encode($dataPengajuan);
+        $pengajuan->status = 'Menunggu'; // Kembalikan ke antrean Admin
+        $pengajuan->pesan_admin = null; // Hapus pesan error sebelumnya
+        $pengajuan->save();
+
+        return redirect()->route('penduduk.riwayat.surat')->with('success', 'Pengajuan berhasil diperbaiki dan dikirim ulang ke Admin.');
     }
 }
